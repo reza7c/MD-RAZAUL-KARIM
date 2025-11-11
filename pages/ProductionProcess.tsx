@@ -1,10 +1,17 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Card from '../components/Card';
 import { api } from '../services/mockApi';
 import { Employee, RawMaterial, Settings, CuttingRecord, SewingRecord, FinishingRecord, ProductionSizeQuantities } from '../types';
 
 type ProcessType = 'cutting' | 'sewing' | 'finishing';
+
+const StatusBadge: React.FC<{ status: 'Completed' | 'Pending' }> = ({ status }) => (
+    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+        status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+    }`}>
+        {status}
+    </span>
+);
 
 const ProductionProcess: React.FC = () => {
     const [activeTab, setActiveTab] = useState<ProcessType>('cutting');
@@ -32,7 +39,7 @@ const ProductionProcess: React.FC = () => {
         rate: 1.5
     });
 
-    const totalSizeQuantity = useMemo(() => Object.values(formData.sizes).reduce((sum, qty) => sum + qty, 0), [formData.sizes]);
+    const totalSizeQuantity = useMemo(() => Object.values(formData.sizes).reduce((sum: number, qty: number) => sum + qty, 0), [formData.sizes]);
 
     const fetchData = useCallback(async () => {
         try {
@@ -83,7 +90,8 @@ const ProductionProcess: React.FC = () => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: name.includes('Used') || name === 'rate' ? parseFloat(value) || 0 : value }));
+        const numericFields = ['fabricUsed', 'quantity', 'rate'];
+        setFormData(prev => ({ ...prev, [name]: numericFields.includes(name) ? parseFloat(value) || 0 : value }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -196,18 +204,78 @@ const ProductionProcess: React.FC = () => {
     const renderTable = () => {
         let records: any[] = [];
         let headers: string[] = [];
-
+        let tableBody: React.ReactNode = null;
+    
         if (activeTab === 'cutting') {
             records = cuttingRecords;
-            headers = ['ID', 'Style', 'Employee', 'Material', 'Fabric Used', 'S', 'M', 'L', 'XL', 'XXL', 'Total', 'Rate', 'Amount', 'Date'];
+            headers = ['ID', 'Style', 'Employee', 'Material', 'Material ID', 'Fabric Used', 'S', 'M', 'L', 'XL', 'XXL', 'Total', 'Rate', 'Amount', 'Date', 'Status'];
+            tableBody = records.map((r: CuttingRecord) => (
+                <tr key={r.id} className="border-b">
+                    <td className="p-2">{r.id}</td>
+                    <td className="p-2">{r.styleName}</td>
+                    <td className="p-2">{r.employeeName}</td>
+                    <td className="p-2">{r.materialUsedName}</td>
+                    <td className="p-2">{r.materialUsedId}</td>
+                    <td className="p-2">{r.fabricUsed} {r.unit}</td>
+                    <td className="p-2">{r.s}</td>
+                    <td className="p-2">{r.m}</td>
+                    <td className="p-2">{r.l}</td>
+                    <td className="p-2">{r.xl}</td>
+                    <td className="p-2">{r.xxl}</td>
+                    <td className="p-2 font-bold">{r.total}</td>
+                    <td className="p-2">৳{r.rate.toFixed(2)}</td>
+                    <td className="p-2">৳{r.amount.toFixed(2)}</td>
+                    <td className="p-2">{r.date}</td>
+                    <td className="p-2"><StatusBadge status={r.status} /></td>
+                </tr>
+            ));
         } else if (activeTab === 'sewing') {
             records = sewingRecords;
-            headers = ['ID', 'Style', 'Employee', 'S', 'M', 'L', 'XL', 'XXL', 'Total', 'Rate', 'Amount', 'Date'];
+            headers = ['ID', 'Style', 'Employee', 'S', 'M', 'L', 'XL', 'XXL', 'Total', 'Rate', 'Amount', 'Date', 'Status'];
+            tableBody = records.map((r: SewingRecord) => (
+                <tr key={r.id} className="border-b">
+                    <td className="p-2">{r.id}</td>
+                    <td className="p-2">{r.styleName}</td>
+                    <td className="p-2">{r.employeeName}</td>
+                    <td className="p-2">{r.s}</td>
+                    <td className="p-2">{r.m}</td>
+                    <td className="p-2">{r.l}</td>
+                    <td className="p-2">{r.xl}</td>
+                    <td className="p-2">{r.xxl}</td>
+                    <td className="p-2 font-bold">{r.total}</td>
+                    <td className="p-2">৳{r.rate.toFixed(2)}</td>
+                    <td className="p-2">৳{r.amount.toFixed(2)}</td>
+                    <td className="p-2">{r.date}</td>
+                    <td className="p-2"><StatusBadge status={r.status} /></td>
+                </tr>
+            ));
         } else if (activeTab === 'finishing') {
             records = finishingRecords;
-            headers = ['ID', 'Style', 'Employee', 'Quantity', 'Rate', 'Amount', 'Date'];
+            headers = ['ID', 'Style', 'Employee', 'Quantity', 'Rate', 'Amount', 'Date', 'Status'];
+            tableBody = records.map((r: FinishingRecord) => (
+                <tr key={r.id} className="border-b">
+                    <td className="p-2">{r.id}</td>
+                    <td className="p-2">{r.styleName}</td>
+                    <td className="p-2">{r.employeeName}</td>
+                    <td className="p-2 font-bold">{r.quantity}</td>
+                    <td className="p-2">৳{r.rate.toFixed(2)}</td>
+                    <td className="p-2">৳{r.totalAmount.toFixed(2)}</td>
+                    <td className="p-2">{r.date}</td>
+                    <td className="p-2"><StatusBadge status={r.status} /></td>
+                </tr>
+            ));
         }
-
+    
+        if (records.length === 0) {
+            tableBody = (
+                <tr>
+                    <td colSpan={headers.length} className="text-center p-4">
+                        No records found.
+                    </td>
+                </tr>
+            );
+        }
+    
         return (
             <Card title={`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Records`}>
                 <div className="overflow-x-auto">
@@ -216,28 +284,7 @@ const ProductionProcess: React.FC = () => {
                         <tr className="bg-gray-100">{headers.map(h => <th key={h} className="p-2 text-left font-semibold">{h}</th>)}</tr>
                     </thead>
                     <tbody>
-                        {records.map(r => (
-                            <tr key={r.id} className="border-b">
-                                {activeTab === 'cutting' && <>
-                                    <td className="p-2">{r.id}</td><td className="p-2">{r.styleName}</td><td className="p-2">{r.employeeName}</td>
-                                    <td className="p-2">{r.materialUsedName}</td><td className="p-2">{r.fabricUsed} {r.unit}</td>
-                                    <td className="p-2">{r.s}</td><td className="p-2">{r.m}</td><td className="p-2">{r.l}</td>
-                                    <td className="p-2">{r.xl}</td><td className="p-2">{r.xxl}</td><td className="p-2 font-bold">{r.total}</td>
-                                    <td className="p-2">৳{r.rate}</td><td className="p-2">৳{r.amount.toFixed(2)}</td><td className="p-2">{r.date}</td>
-                                </>}
-                                 {activeTab === 'sewing' && <>
-                                    <td className="p-2">{r.id}</td><td className="p-2">{r.styleName}</td><td className="p-2">{r.employeeName}</td>
-                                    <td className="p-2">{r.s}</td><td className="p-2">{r.m}</td><td className="p-2">{r.l}</td>
-                                    <td className="p-2">{r.xl}</td><td className="p-2">{r.xxl}</td><td className="p-2 font-bold">{r.total}</td>
-                                    <td className="p-2">৳{r.rate}</td><td className="p-2">৳{r.amount.toFixed(2)}</td><td className="p-2">{r.date}</td>
-                                </>}
-                                {activeTab === 'finishing' && <>
-                                    <td className="p-2">{r.id}</td><td className="p-2">{r.styleName}</td><td className="p-2">{r.employeeName}</td>
-                                    <td className="p-2 font-bold">{r.quantity}</td><td className="p-2">৳{r.rate}</td>
-                                    <td className="p-2">৳{r.totalAmount.toFixed(2)}</td><td className="p-2">{r.date}</td>
-                                </>}
-                            </tr>
-                        ))}
+                        {tableBody}
                     </tbody>
                 </table>
                 </div>
