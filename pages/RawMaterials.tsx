@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/mockApi';
 import { RawMaterial } from '../types';
@@ -48,63 +47,86 @@ const RawMaterials: React.FC = () => {
 
 
   return (
-    <div className="space-y-6">
-        <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">Raw Materials</h1>
-            <button
-                onClick={() => setShowForm(!showForm)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-                <PlusCircle size={18} /> {showForm ? 'Cancel' : 'Add Material'}
-            </button>
-        </div>
-        
+    <div className="page-container">
+      <Card
+        title="Material Stock"
+        titleIcon={Package}
+        headerContent={
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="button button-primary"
+          >
+            <PlusCircle size={18} />
+            <span>{showForm ? 'Cancel' : 'Add Material'}</span>
+          </button>
+        }
+      >
         {showForm && (
-            <Card title="Add New Raw Material">
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <input name="name" value={newMaterial.name} onChange={handleInputChange} placeholder="Material Name" className="p-2 border rounded" required />
-                    <input name="type" value={newMaterial.type} onChange={handleInputChange} placeholder="Type (e.g., Fabrics)" className="p-2 border rounded" />
-                    <input name="quantity" value={newMaterial.quantity} onChange={handleInputChange} type="number" placeholder="Quantity" className="p-2 border rounded" required />
-                    <input name="unit" value={newMaterial.unit} onChange={handleInputChange} placeholder="Unit (e.g., KG, pcs)" className="p-2 border rounded" />
-                    <input name="unitPrice" value={newMaterial.unitPrice} onChange={handleInputChange} type="number" step="0.01" placeholder="Unit Price" className="p-2 border rounded" required />
-                    <input name="supplier" value={newMaterial.supplier} onChange={handleInputChange} placeholder="Supplier" className="p-2 border rounded" />
-                    <button type="submit" className="col-span-full md:col-span-1 lg:col-span-1 p-2 bg-green-600 text-white rounded hover:bg-green-700">Save Material</button>
-                </form>
-            </Card>
+          <div className="form-container">
+            <h3 className="form-title">Add New Raw Material</h3>
+            <form onSubmit={handleSubmit} className="form-grid">
+              <div className="form-group">
+                  <label htmlFor="name">Material Name</label>
+                  <input id="name" name="name" value={newMaterial.name} onChange={handleInputChange} placeholder="e.g., Cotton Fabric" required />
+              </div>
+              <div className="form-group">
+                  <label htmlFor="type">Type</label>
+                  <input id="type" name="type" value={newMaterial.type} onChange={handleInputChange} placeholder="e.g., Fabrics" />
+              </div>
+               <div className="form-group">
+                  <label htmlFor="quantity">Quantity</label>
+                  <input id="quantity" name="quantity" value={newMaterial.quantity} onChange={handleInputChange} type="number" placeholder="0" required />
+              </div>
+               <div className="form-group">
+                  <label htmlFor="unit">Unit</label>
+                  <input id="unit" name="unit" value={newMaterial.unit} onChange={handleInputChange} placeholder="e.g., KG, pcs" />
+              </div>
+              <div className="form-group">
+                  <label htmlFor="unitPrice">Unit Price</label>
+                  <input id="unitPrice" name="unitPrice" value={newMaterial.unitPrice} onChange={handleInputChange} type="number" step="0.01" placeholder="0.00" required />
+              </div>
+              <div className="form-group">
+                  <label htmlFor="supplier">Supplier</label>
+                  <input id="supplier" name="supplier" value={newMaterial.supplier} onChange={handleInputChange} placeholder="e.g., Sumaya Traders" />
+              </div>
+              <div className="form-group form-group-full">
+                <button type="submit" className="button button-success">Save Material</button>
+              </div>
+            </form>
+          </div>
         )}
-
-        <Card title="Material Stock" titleIcon={Package}>
+        
         {loading ? (
-            <div className="text-center p-4">Loading materials...</div>
+          <div className="loading-placeholder">Loading materials...</div>
         ) : (
-            <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+          <div className="table-container">
+            <table className="data-table">
+              <thead>
                 <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Value</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Quantity</th>
+                  <th>Unit Price</th>
+                  <th>Total Value</th>
+                  <th>Supplier</th>
                 </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+              </thead>
+              <tbody>
                 {materials.map((mat) => (
-                    <tr key={mat.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{mat.id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mat.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mat.quantity} {mat.unit}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">৳{mat.unitPrice.toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">৳{(mat.quantity * mat.unitPrice).toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mat.supplier}</td>
-                    </tr>
+                  <tr key={mat.id}>
+                    <td>{mat.id}</td>
+                    <td>{mat.name}</td>
+                    <td>{mat.quantity} {mat.unit}</td>
+                    <td>৳{mat.unitPrice.toLocaleString()}</td>
+                    <td>৳{(mat.quantity * mat.unitPrice).toLocaleString()}</td>
+                    <td>{mat.supplier}</td>
+                  </tr>
                 ))}
-                </tbody>
+              </tbody>
             </table>
-            </div>
+          </div>
         )}
-        </Card>
+      </Card>
     </div>
   );
 };

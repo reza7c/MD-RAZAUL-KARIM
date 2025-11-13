@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../services/mockApi';
 import { Shipment, StockItem } from '../types';
@@ -19,6 +18,7 @@ const Shipments: React.FC = () => {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+      setError('');
       const [shipmentData, stockData] = await Promise.all([
           api.getShipments(),
           api.getStockItems(),
@@ -62,73 +62,98 @@ const Shipments: React.FC = () => {
   const selectedStockItem = stockItems.find(item => item.itemName === newShipment.itemName);
 
   return (
-    <div className="space-y-6">
-        <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">Shipments</h1>
+    <div className="page-container">
+      <Card
+        title="Shipment Records"
+        titleIcon={Truck}
+        headerContent={
             <button
                 onClick={() => setShowForm(!showForm)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="button button-primary"
             >
-                <PlusCircle size={18} /> {showForm ? 'Cancel' : 'New Shipment'}
+                <PlusCircle size={18} />
+                <span>{showForm ? 'Cancel' : 'New Shipment'}</span>
             </button>
-        </div>
-        
+        }
+      >
         {showForm && (
-            <Card title="New Shipment">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                     {error && <p className="text-red-500 text-sm">{error}</p>}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input name="orderNumber" value={newShipment.orderNumber} onChange={handleInputChange} placeholder="Order Number" className="p-2 border rounded" required />
-                        <input name="customer" value={newShipment.customer} onChange={handleInputChange} placeholder="Customer Name" className="p-2 border rounded" required />
-                        <select name="itemName" value={newShipment.itemName} onChange={handleInputChange} required className="p-2 border rounded">
+            <div className="form-container">
+                <h3 className="form-title">New Shipment</h3>
+                <form onSubmit={handleSubmit} className="form-grid">
+                     {error && <p className="form-error form-group-full">{error}</p>}
+                    <div className="form-group">
+                        <label>Order Number</label>
+                        <input name="orderNumber" value={newShipment.orderNumber} onChange={handleInputChange} placeholder="e.g., ORD-001" required />
+                    </div>
+                    <div className="form-group">
+                        <label>Customer</label>
+                        <input name="customer" value={newShipment.customer} onChange={handleInputChange} placeholder="Customer Name" required />
+                    </div>
+                     <div className="form-group">
+                        <label>Item</label>
+                        <select name="itemName" value={newShipment.itemName} onChange={handleInputChange} required>
                             <option value="">Select Item</option>
                             {stockItems.map(item => <option key={item.id} value={item.itemName}>{item.itemName} (Stock: {item.quantity})</option>)}
                         </select>
-                         <div>
-                            <input name="quantity" value={newShipment.quantity} onChange={handleInputChange} type="number" placeholder="Quantity" className="p-2 border rounded w-full" required max={selectedStockItem?.quantity}/>
-                            {selectedStockItem && newShipment.quantity > selectedStockItem.quantity && <p className="text-red-500 text-xs mt-1">Exceeds available stock!</p>}
-                        </div>
-                        <input name="value" value={newShipment.value} onChange={handleInputChange} type="number" step="0.01" placeholder="Total Value" className="p-2 border rounded" required />
-                        <input name="destination" value={newShipment.destination} onChange={handleInputChange} placeholder="Destination" className="p-2 border rounded" />
-                        <input name="shipmentDate" value={newShipment.shipmentDate} onChange={handleInputChange} type="date" className="p-2 border rounded" />
-                        <select name="status" value={newShipment.status} onChange={handleInputChange} className="p-2 border rounded">
+                    </div>
+                     <div className="form-group">
+                        <label>Quantity</label>
+                        <input name="quantity" value={newShipment.quantity} onChange={handleInputChange} type="number" placeholder="0" required max={selectedStockItem?.quantity}/>
+                        {selectedStockItem && newShipment.quantity > selectedStockItem.quantity && <p className="form-validation-error">Exceeds available stock!</p>}
+                    </div>
+                    <div className="form-group">
+                        <label>Total Value</label>
+                        <input name="value" value={newShipment.value} onChange={handleInputChange} type="number" step="0.01" placeholder="0.00" required />
+                    </div>
+                    <div className="form-group">
+                        <label>Destination</label>
+                        <input name="destination" value={newShipment.destination} onChange={handleInputChange} placeholder="e.g., Chittagong" />
+                    </div>
+                    <div className="form-group">
+                        <label>Shipment Date</label>
+                        <input name="shipmentDate" value={newShipment.shipmentDate} onChange={handleInputChange} type="date" />
+                    </div>
+                    <div className="form-group">
+                        <label>Status</label>
+                        <select name="status" value={newShipment.status} onChange={handleInputChange}>
                             <option value="Pending">Pending</option>
                             <option value="Shipped">Shipped</option>
                             <option value="Delivered">Delivered</option>
                         </select>
                     </div>
-                    <button type="submit" className="p-2 bg-green-600 text-white rounded hover:bg-green-700">Save Shipment</button>
+                    <div className="form-group form-group-full">
+                        <button type="submit" className="button button-success">Save Shipment</button>
+                    </div>
                 </form>
-            </Card>
+            </div>
         )}
 
-        <Card title="Shipment Records" titleIcon={Truck}>
         {loading ? (
-            <div className="text-center p-4">Loading shipments...</div>
+            <div className="loading-placeholder">Loading shipments...</div>
         ) : (
-            <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <div className="table-container">
+            <table className="data-table">
+                <thead>
                 <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order #</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th>Order #</th>
+                    <th>Customer</th>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Value</th>
+                    <th>Date</th>
+                    <th>Status</th>
                 </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody>
                 {shipments.map((s) => (
                     <tr key={s.id}>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{s.orderNumber}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{s.customer}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{s.itemName}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{s.quantity}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">৳{s.value.toLocaleString()}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{s.shipmentDate}</td>
-                    <td className="px-6 py-4"><span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${s.status === 'Delivered' ? 'bg-green-100 text-green-800' : s.status === 'Shipped' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>{s.status}</span></td>
+                    <td>{s.orderNumber}</td>
+                    <td>{s.customer}</td>
+                    <td>{s.itemName}</td>
+                    <td>{s.quantity}</td>
+                    <td>৳{s.value.toLocaleString()}</td>
+                    <td>{s.shipmentDate}</td>
+                    <td><span className={`status-badge ${s.status === 'Delivered' ? 'status-active' : s.status === 'Shipped' ? 'status-shipped' : 'status-pending'}`}>{s.status}</span></td>
                     </tr>
                 ))}
                 </tbody>

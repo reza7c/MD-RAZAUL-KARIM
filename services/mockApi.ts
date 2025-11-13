@@ -1,4 +1,3 @@
-
 import { Employee, RawMaterial, CuttingRecord, SewingRecord, FinishingRecord, StockItem, Shipment, Settings } from '../types';
 
 // Helper to simulate network delay
@@ -6,9 +5,9 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 // Mock Database
 let employees: Employee[] = [
-  { ID: 'AMS-0001', Name: 'John Doe', Designation: 'Operator', Department: 'Sewing', DOJ: '01-Jan-2023', Type: 'Production', Status: 'Active', Salary: 15000 },
-  { ID: 'AMS-0002', Name: 'Jane Smith', Designation: 'Supervisor', Department: 'Cutting', DOJ: '15-Feb-2022', Type: 'Monthly', Status: 'Active', Salary: 25000 },
-  { ID: 'AMS-0003', Name: 'Mike Johnson', Designation: 'Manager', Department: 'Finishing', DOJ: '10-Mar-2021', Type: 'Monthly', Status: 'Active', Salary: 45000 },
+  { ID: 'AMS-0001', Name: 'John Doe', Designation: 'Operator', Department: 'Sewing', DOJ: '2023-01-01', Type: 'Production', Status: 'Active', Salary: 15000 },
+  { ID: 'AMS-0002', Name: 'Jane Smith', Designation: 'Supervisor', Department: 'Cutting', DOJ: '2022-02-15', Type: 'Monthly', Status: 'Active', Salary: 25000 },
+  { ID: 'AMS-0003', Name: 'Mike Johnson', Designation: 'Manager', Department: 'Finishing', DOJ: '2021-03-10', Type: 'Monthly', Status: 'Active', Salary: 45000 },
 ];
 
 let rawMaterials: RawMaterial[] = [
@@ -40,6 +39,42 @@ export const api = {
   getEmployees: async (): Promise<Employee[]> => {
     await delay(500);
     return JSON.parse(JSON.stringify(employees));
+  },
+  saveEmployee: async (employeeData: Omit<Employee, 'ID'> & { ID?: string }): Promise<Employee> => {
+    await delay(600);
+    if (employeeData.ID && employeeData.ID !== 'AMS-0000') {
+      // Update
+      const index = employees.findIndex(e => e.ID === employeeData.ID);
+      if (index !== -1) {
+        employees[index] = { ...employees[index], ...employeeData } as Employee;
+        return employees[index];
+      } else {
+        throw new Error("Employee not found for update");
+      }
+    } else {
+      // Create new
+      const lastIdNum = employees.reduce((max, e) => {
+        const num = parseInt(e.ID.split('-')[1]);
+        return num > max ? num : max;
+      }, 0);
+      const newId = `AMS-${(lastIdNum + 1).toString().padStart(4, '0')}`;
+      const newEmployee: Employee = {
+        ...employeeData,
+        ID: newId,
+      };
+      employees.push(newEmployee);
+      return newEmployee;
+    }
+  },
+
+  deleteEmployee: async (employeeId: string): Promise<{ success: boolean }> => {
+    await delay(400);
+    const initialLength = employees.length;
+    employees = employees.filter(e => e.ID !== employeeId);
+    if (employees.length === initialLength) {
+      throw new Error("Employee not found for deletion");
+    }
+    return { success: true };
   },
   getRawMaterials: async (): Promise<RawMaterial[]> => {
     await delay(400);

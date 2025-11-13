@@ -6,8 +6,8 @@ import { Employee, RawMaterial, Settings, CuttingRecord, SewingRecord, Finishing
 type ProcessType = 'cutting' | 'sewing' | 'finishing';
 
 const StatusBadge: React.FC<{ status: 'Completed' | 'Pending' }> = ({ status }) => (
-    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-        status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+    <span className={`status-badge ${
+        status === 'Completed' ? 'status-active' : 'status-pending'
     }`}>
         {status}
     </span>
@@ -138,64 +138,66 @@ const ProductionProcess: React.FC = () => {
         
         return (
             <Card title={`New ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Record`}>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {error && <p className="text-red-500 text-sm">{error}</p>}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex flex-col">
-                            <label className="mb-1 text-sm font-medium">Style Name</label>
-                            <select name="styleName" value={formData.styleName} onChange={handleInputChange} required className="p-2 border rounded">
-                                <option value="">Select Style</option>
-                                {activeTab === 'cutting' && settings?.styleNames.map(s => <option key={s} value={s}>{s}</option>)}
-                                {activeTab === 'sewing' && availableCutStock.map(s => <option key={s.styleName} value={s.styleName}>{s.styleName} (Cut: {s.quantity})</option>)}
-                                {activeTab === 'finishing' && availableSewStock.map(s => <option key={s.styleName} value={s.styleName}>{s.styleName} (Sewn: {s.quantity})</option>)}
-                            </select>
-                        </div>
-                         <div className="flex flex-col">
-                            <label className="mb-1 text-sm font-medium">Employee</label>
-                            <select name="employeeId" value={formData.employeeId} onChange={handleInputChange} required className="p-2 border rounded">
-                                <option value="">Select Employee</option>
-                                {activeEmployees.map(e => <option key={e.ID} value={e.ID}>{e.Name}</option>)}
-                            </select>
-                        </div>
+                <form onSubmit={handleSubmit} className="form-grid">
+                    {error && <p className="form-error form-group-full">{error}</p>}
+                    
+                    <div className="form-group">
+                        <label>Style Name</label>
+                        <select name="styleName" value={formData.styleName} onChange={handleInputChange} required>
+                            <option value="">Select Style</option>
+                            {activeTab === 'cutting' && settings?.styleNames.map(s => <option key={s} value={s}>{s}</option>)}
+                            {activeTab === 'sewing' && availableCutStock.map(s => <option key={s.styleName} value={s.styleName}>{s.styleName} (Cut: {s.quantity})</option>)}
+                            {activeTab === 'finishing' && availableSewStock.map(s => <option key={s.styleName} value={s.styleName}>{s.styleName} (Sewn: {s.quantity})</option>)}
+                        </select>
                     </div>
+                    <div className="form-group">
+                        <label>Employee</label>
+                        <select name="employeeId" value={formData.employeeId} onChange={handleInputChange} required>
+                            <option value="">Select Employee</option>
+                            {activeEmployees.map(e => <option key={e.ID} value={e.ID}>{e.Name}</option>)}
+                        </select>
+                    </div>
+
                     {activeTab === 'cutting' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div className="flex flex-col">
-                                <label className="mb-1 text-sm font-medium">Material Used</label>
-                                <select name="materialUsedId" value={formData.materialUsedId} onChange={handleInputChange} required className="p-2 border rounded">
+                        <>
+                            <div className="form-group">
+                                <label>Material Used</label>
+                                <select name="materialUsedId" value={formData.materialUsedId} onChange={handleInputChange} required>
                                     <option value="">Select Material</option>
                                     {rawMaterials.map(m => <option key={m.id} value={m.id}>{m.name} (Stock: {m.quantity} {m.unit})</option>)}
                                 </select>
                             </div>
-                             <div className="flex flex-col">
-                                <label className="mb-1 text-sm font-medium">Fabric Used ({selectedMaterial?.unit})</label>
-                                <input name="fabricUsed" value={formData.fabricUsed} onChange={handleInputChange} type="number" required className="p-2 border rounded" max={selectedMaterial?.quantity} />
-                                {selectedMaterial && formData.fabricUsed > selectedMaterial.quantity && <p className="text-red-500 text-xs mt-1">Exceeds stock!</p>}
+                            <div className="form-group">
+                                <label>Fabric Used ({selectedMaterial?.unit})</label>
+                                <input name="fabricUsed" value={formData.fabricUsed} onChange={handleInputChange} type="number" required max={selectedMaterial?.quantity} />
+                                {selectedMaterial && formData.fabricUsed > selectedMaterial.quantity && <p className="form-validation-error">Exceeds stock!</p>}
                             </div>
-                        </div>
+                        </>
                     )}
                     {activeTab !== 'finishing' ? (
-                        <div>
-                            <label className="block mb-1 text-sm font-medium">Size Quantities (Total: {totalSizeQuantity})</label>
-                            {selectedCutStock && totalSizeQuantity > selectedCutStock.quantity && <p className="text-red-500 text-xs mb-1">Total quantity exceeds available cut stock ({selectedCutStock.quantity})!</p>}
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        <div className="form-group form-group-full">
+                            <label>Size Quantities (Total: {totalSizeQuantity})</label>
+                            {selectedCutStock && totalSizeQuantity > selectedCutStock.quantity && <p className="form-validation-error">Total quantity exceeds available cut stock ({selectedCutStock.quantity})!</p>}
+                            <div className="size-inputs-grid">
                                 {Object.keys(formData.sizes).map(size => (
-                                    <input key={size} name={size} value={formData.sizes[size as keyof ProductionSizeQuantities]} onChange={handleSizeChange} type="number" placeholder={size.toUpperCase()} className="p-2 border rounded text-center"/>
+                                    <input key={size} name={size} value={formData.sizes[size as keyof ProductionSizeQuantities]} onChange={handleSizeChange} type="number" placeholder={size.toUpperCase()} />
                                 ))}
                             </div>
                         </div>
                     ) : (
-                         <div className="flex flex-col">
-                            <label className="mb-1 text-sm font-medium">Quantity</label>
-                            <input name="quantity" value={formData.quantity} onChange={handleInputChange} type="number" required className="p-2 border rounded" max={selectedSewStock?.quantity} />
-                             {selectedSewStock && formData.quantity > selectedSewStock.quantity && <p className="text-red-500 text-xs mt-1">Exceeds sewn stock ({selectedSewStock.quantity})!</p>}
+                         <div className="form-group">
+                            <label>Quantity</label>
+                            <input name="quantity" value={formData.quantity} onChange={handleInputChange} type="number" required max={selectedSewStock?.quantity} />
+                             {selectedSewStock && formData.quantity > selectedSewStock.quantity && <p className="form-validation-error">Exceeds sewn stock ({selectedSewStock.quantity})!</p>}
                         </div>
                     )}
-                    <div className="flex flex-col w-full md:w-1/3">
-                        <label className="mb-1 text-sm font-medium">Rate</label>
-                        <input name="rate" value={formData.rate} onChange={handleInputChange} type="number" step="0.01" required className="p-2 border rounded" />
+                    <div className="form-group">
+                        <label>Rate</label>
+                        <input name="rate" value={formData.rate} onChange={handleInputChange} type="number" step="0.01" required />
                     </div>
-                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add Record</button>
+                     <div className="form-group form-group-full">
+                        <button type="submit" className="button button-primary">Add Record</button>
+                    </div>
                 </form>
             </Card>
         );
@@ -208,60 +210,36 @@ const ProductionProcess: React.FC = () => {
     
         if (activeTab === 'cutting') {
             records = cuttingRecords;
-            headers = ['ID', 'Style', 'Employee', 'Material', 'Material ID', 'Fabric Used', 'S', 'M', 'L', 'XL', 'XXL', 'Total', 'Rate', 'Amount', 'Date', 'Status'];
+            headers = ['ID', 'Style', 'Employee', 'Material', 'Fabric Used', 'Total', 'Rate', 'Amount', 'Date', 'Status'];
             tableBody = records.map((r: CuttingRecord) => (
-                <tr key={r.id} className="border-b">
-                    <td className="p-2">{r.id}</td>
-                    <td className="p-2">{r.styleName}</td>
-                    <td className="p-2">{r.employeeName}</td>
-                    <td className="p-2">{r.materialUsedName}</td>
-                    <td className="p-2">{r.materialUsedId}</td>
-                    <td className="p-2">{r.fabricUsed} {r.unit}</td>
-                    <td className="p-2">{r.s}</td>
-                    <td className="p-2">{r.m}</td>
-                    <td className="p-2">{r.l}</td>
-                    <td className="p-2">{r.xl}</td>
-                    <td className="p-2">{r.xxl}</td>
-                    <td className="p-2 font-bold">{r.total}</td>
-                    <td className="p-2">৳{r.rate.toFixed(2)}</td>
-                    <td className="p-2">৳{r.amount.toFixed(2)}</td>
-                    <td className="p-2">{r.date}</td>
-                    <td className="p-2"><StatusBadge status={r.status} /></td>
+                <tr key={r.id}>
+                    <td>{r.id}</td><td>{r.styleName}</td><td>{r.employeeName}</td>
+                    <td>{r.materialUsedName}</td><td>{r.fabricUsed} {r.unit}</td>
+                    <td className="font-semibold">{r.total}</td><td>৳{r.rate.toFixed(2)}</td>
+                    <td>৳{r.amount.toFixed(2)}</td><td>{r.date}</td>
+                    <td><StatusBadge status={r.status} /></td>
                 </tr>
             ));
         } else if (activeTab === 'sewing') {
             records = sewingRecords;
-            headers = ['ID', 'Style', 'Employee', 'S', 'M', 'L', 'XL', 'XXL', 'Total', 'Rate', 'Amount', 'Date', 'Status'];
+            headers = ['ID', 'Style', 'Employee', 'Total', 'Rate', 'Amount', 'Date', 'Status'];
             tableBody = records.map((r: SewingRecord) => (
-                <tr key={r.id} className="border-b">
-                    <td className="p-2">{r.id}</td>
-                    <td className="p-2">{r.styleName}</td>
-                    <td className="p-2">{r.employeeName}</td>
-                    <td className="p-2">{r.s}</td>
-                    <td className="p-2">{r.m}</td>
-                    <td className="p-2">{r.l}</td>
-                    <td className="p-2">{r.xl}</td>
-                    <td className="p-2">{r.xxl}</td>
-                    <td className="p-2 font-bold">{r.total}</td>
-                    <td className="p-2">৳{r.rate.toFixed(2)}</td>
-                    <td className="p-2">৳{r.amount.toFixed(2)}</td>
-                    <td className="p-2">{r.date}</td>
-                    <td className="p-2"><StatusBadge status={r.status} /></td>
+                <tr key={r.id}>
+                    <td>{r.id}</td><td>{r.styleName}</td><td>{r.employeeName}</td>
+                    <td className="font-semibold">{r.total}</td><td>৳{r.rate.toFixed(2)}</td>
+                    <td>৳{r.amount.toFixed(2)}</td><td>{r.date}</td>
+                    <td><StatusBadge status={r.status} /></td>
                 </tr>
             ));
         } else if (activeTab === 'finishing') {
             records = finishingRecords;
             headers = ['ID', 'Style', 'Employee', 'Quantity', 'Rate', 'Amount', 'Date', 'Status'];
             tableBody = records.map((r: FinishingRecord) => (
-                <tr key={r.id} className="border-b">
-                    <td className="p-2">{r.id}</td>
-                    <td className="p-2">{r.styleName}</td>
-                    <td className="p-2">{r.employeeName}</td>
-                    <td className="p-2 font-bold">{r.quantity}</td>
-                    <td className="p-2">৳{r.rate.toFixed(2)}</td>
-                    <td className="p-2">৳{r.totalAmount.toFixed(2)}</td>
-                    <td className="p-2">{r.date}</td>
-                    <td className="p-2"><StatusBadge status={r.status} /></td>
+                <tr key={r.id}>
+                   <td>{r.id}</td><td>{r.styleName}</td><td>{r.employeeName}</td>
+                   <td className="font-semibold">{r.quantity}</td><td>৳{r.rate.toFixed(2)}</td>
+                   <td>৳{r.totalAmount.toFixed(2)}</td><td>{r.date}</td>
+                   <td><StatusBadge status={r.status} /></td>
                 </tr>
             ));
         }
@@ -278,35 +256,27 @@ const ProductionProcess: React.FC = () => {
     
         return (
             <Card title={`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Records`}>
-                <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                    <thead>
-                        <tr className="bg-gray-100">{headers.map(h => <th key={h} className="p-2 text-left font-semibold">{h}</th>)}</tr>
-                    </thead>
-                    <tbody>
-                        {tableBody}
-                    </tbody>
+                <div className="table-container">
+                <table className="data-table">
+                    <thead><tr>{headers.map(h => <th key={h}>{h}</th>)}</tr></thead>
+                    <tbody>{tableBody}</tbody>
                 </table>
                 </div>
             </Card>
         );
     };
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <div className="loading-placeholder">Loading...</div>;
 
     return (
-        <div className="space-y-6">
-            <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+        <div className="page-container">
+            <div className="tabs-container">
+                <nav className="tabs-nav">
                     {(['cutting', 'sewing', 'finishing'] as ProcessType[]).map(tab => (
                         <button
                             key={tab}
                             onClick={() => { setActiveTab(tab); resetForm(); }}
-                            className={`${
-                                activeTab === tab
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                            className={`tab-button ${activeTab === tab ? 'active' : ''}`}
                         >
                             {tab.charAt(0).toUpperCase() + tab.slice(1)}
                         </button>
